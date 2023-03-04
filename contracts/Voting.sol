@@ -5,7 +5,7 @@ import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 
 
 contract Voting is Ownable { 
-
+    ///@notice Return Vote wining Proposal ID
     uint public winningProposalID;
 
     struct Voter {
@@ -92,6 +92,13 @@ contract Voting is Ownable {
         proposalsArray[_id].voteCount++;
 
         emit Voted(msg.sender, _id);
+
+        //Add vote to previous to avoir DOS possibilities in tallyVotes
+        if (_id != winningProposalID) {
+            if (proposalsArray[_id].voteCount > proposalsArray[winningProposalID].voteCount){
+                winningProposalID=_id;
+            }
+        }
     }
 
     // ::::::::::::: STATE ::::::::::::: //
@@ -128,16 +135,17 @@ contract Voting is Ownable {
 
 
    function tallyVotes() external onlyOwner {
-       require(workflowStatus == WorkflowStatus.VotingSessionEnded, "Current status is not voting session ended");
-       uint _winningProposalId;
-      for (uint256 p = 0; p < proposalsArray.length; p++) {
-           if (proposalsArray[p].voteCount > proposalsArray[_winningProposalId].voteCount) {
+        require(workflowStatus == WorkflowStatus.VotingSessionEnded, "Current status is not voting session ended");
+        /* vote count is now done in setVote function
+        uint _winningProposalId;
+        for (uint256 p = 0; p < proposalsArray.length; p++) {
+            if (proposalsArray[p].voteCount > proposalsArray[_winningProposalId].voteCount) {
                _winningProposalId = p;
-          }
-       }
-       winningProposalID = _winningProposalId;
+            }
+        }
+        winningProposalID = _winningProposalId;*/
 
-       workflowStatus = WorkflowStatus.VotesTallied;
-       emit WorkflowStatusChange(WorkflowStatus.VotingSessionEnded, WorkflowStatus.VotesTallied);
+        workflowStatus = WorkflowStatus.VotesTallied;
+        emit WorkflowStatusChange(WorkflowStatus.VotingSessionEnded, WorkflowStatus.VotesTallied);
     }
 }
